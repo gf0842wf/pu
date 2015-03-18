@@ -119,6 +119,17 @@ class DotOrderedDict(OrderedDict):
             raise AttributeError('%r has not attr %r' % (self, name))
 
 
+class LastUpdatedOrderedDict(OrderedDict):
+    """保持更新的顺序的有序字典
+    来源: https://docs.python.org/3.4/library/collections.html#ordereddict-examples-and-recipes
+    """
+
+    def __setitem__(self, key, value):
+        if key in self:
+            del self[key]
+        OrderedDict.__setitem__(self, key, value)
+
+
 def union_dict(*objs):
     """字典合并,值相加
     :param objs: 多个字典
