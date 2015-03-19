@@ -4,17 +4,17 @@ import binascii
 
 class pretty_bytes(bytes):
     """提供自定义格式
-    >>> pb = pretty_bytes(b'\xaa\xbb\xcc\xdd\xee\xff')
+    >>> pb = pretty_bytes('\xe8\x87\xaa\xe5\xae\x9a\xe4\xb9\x89')
     >>> '{0:hex}'.format(pb)
-    'aabbccddeeff'
+    'e887aae5ae9ae4b989'
     >>> '{0:HEX}'.format(pb)
-    'AABBCCDDEEFF'
+    'E887AAE5AE9AE4B989'
     >>> '{0:hex+}'.format(pb)
-    'aa bb cc dd ee ff'
+    'e8 87 aa e5 ae 9a e4 b9 89'
     >>> '{0:HEX+}'.format(pb)
-    'AA BB CC DD EE FF'
+    'E8 87 AA E5 AE 9A E4 B9 89'
     >>> '{0}'.format(pb)
-    '\xaa\xbb\xcc\xdd\xee\xff'
+    '\xe8\x87\xaa\xe5\xae\x9a\xe4\xb9\x89'
     """
 
     def __format__(self, format_spec):
