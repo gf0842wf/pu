@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 """threading pool"""
 
-from gevent.event import AsyncResult
-from gevent.queue import Queue
 import logging
-import gevent
 import sys
 
 logger = logging.getLogger(__name__)
+
+try:
+    from gevent.event import AsyncResult
+    from gevent.queue import Queue
+    import gevent
+except ImportError:
+    logger.warn('gevent module not found. please: pip install gevent')
 
 
 class ConnectionPool(object):
