@@ -58,6 +58,3 @@ def test_AsyncResult():
     t.start()
     print event.get()
     print 'over..'
-
-
-test_AsyncResult()
