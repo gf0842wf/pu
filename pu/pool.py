@@ -29,13 +29,13 @@ class Pool(object):
 
     def loop(self, q):
         while True:
-            func, args, async_result = q.get()
+            func, args, kwargs, async_result = q.get()
             try:
-                rs = func(*args)
+                rs = func(*args, **kwargs)
                 if async_result:
                     async_result.set(rs)
             except Exception as e:
-                logger.error('[Last call]: %s %s', func, str(args), exc_info=1)
+                logger.error('[Last call]: %s %s %s', func, str(args), str(kwargs), exc_info=1)
                 if async_result:
                     async_result.set_exception(Exception(sys.exc_info()[1]))
                 else:
@@ -51,7 +51,7 @@ class Pool(object):
         minq = min(self.queues, key=lambda q: q.qsize())
         return minq
 
-    def spawn(self, func, args=tuple(), qid=-1, deferred=False):
+    def spawn(self, func, args=tuple(), kwargs={}, qid=-1, deferred=False):
         """
         :param deferred: 是否返回deferred
         :return: 如果deferred是True, 返回deferred, False返回None
@@ -59,17 +59,18 @@ class Pool(object):
         q = self._selectq(qid)
         if deferred:
             async_result = AsyncResult()
-            q.put((func, args, async_result))
+            q.put((func, args, kwargs, async_result))
             return async_result
         else:
-            q.put((func, args, None))
+            q.put((func, args, kwargs, None))
 
-    def map(self, func, args_lst=[], qid=-1, deferred=True, timeout=None):
+    def map(self, func, args_kwargs_lst=[], qid=-1, deferred=True, timeout=None):
         """并发map
-        :param args_lst: args list
+        :param args_kwargs_lst: args kwargs list => [(args, kwargs), ..] eg. [((2,3), {2:4}), ...]
         :return 返回结果 generator
         """
-        deferred_lst = [self.spawn(func, args, qid=qid, deferred=deferred) for args in args_lst]
+        deferred_lst = [self.spawn(func, args, kwargs or {}, qid=qid, deferred=deferred) for args, kwargs in
+                        args_kwargs_lst]
         return (d.get(timeout=timeout) for d in deferred_lst)
 
 
@@ -139,12 +140,13 @@ class ConnectionPool(object):
         else:
             q.put((op, args, kwargs, None))
 
-    def map(self, op, args_lst=[], qid=-1, deferred=True, timeout=None):
+    def map(self, op, args_kwargs_lst=[], qid=-1, deferred=True, timeout=None):
         """并发map
-        :param args_lst: args list
+        :param args_kwargs_lst: args kwargs list => [(args, kwargs), ..] eg. [((2,3), {2:4}), ...]
         :return 返回结果 generator
         """
-        deferred_lst = [self.call(op, args, {}, qid=qid, deferred=deferred) for args in args_lst]
+        deferred_lst = [self.call(op, args, kwargs or {}, qid=qid, deferred=deferred) for args, kwargs in
+                        args_kwargs_lst]
         return (d.get(timeout=timeout) for d in deferred_lst)
 
 
@@ -158,7 +160,7 @@ if __name__ == '__main__':
 
     pool = Pool(2)
     t0 = time.time()
-    print list(pool.map(foo, [(1,), (2,)]))
+    print list(pool.map(foo, [((1,), {}), ((2,), {})]))
     print time.time() - t0
 
     print pool.spawn(foo, args=(1,), deferred=True)

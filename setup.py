@@ -21,7 +21,6 @@ setup(
     license='MIT',
     author='fk',
     author_email='gf0842wf@gmail.com',
-    url='https://github.com/gf0842wf/pu',
     keywords=['python', 'util'],
     classifiers=classifiers,
 )
