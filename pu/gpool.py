@@ -78,11 +78,12 @@ class ConnectionPool(object):
         else:
             q.put((op, args, kwargs, None))
 
-    def map(self, op, args_lst=[], qid=-1, deferred=True, timeout=None):
+    def map(self, op, args_kwargs_lst=[], qid=-1, deferred=True, timeout=None):
         """并发map
-        :param args_lst: args list
+        :param args_kwargs_lst: args kwargs list => [(args, kwargs), ..] eg. [((2,3), {2:4}), ...]
         :return 返回结果 generator
         """
-        deferred_lst = [self.call(op, args, {}, qid=qid, deferred=deferred) for args in args_lst]
+        deferred_lst = [self.call(op, args, kwargs or {}, qid=qid, deferred=deferred) for args, kwargs in
+                        args_kwargs_lst]
         return (d.get(timeout=timeout) for d in deferred_lst)
 
