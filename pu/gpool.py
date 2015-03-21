@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""threading connection pool"""
+"""gevent threading connection pool"""
 
 import logging
 import sys
