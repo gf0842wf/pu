@@ -6,9 +6,6 @@ mysql db client
 兼容 ultramysql, MySQLdb, pymysql
 """
 
-__author__ = 'wangfei'
-__date__ = '2015/03/11'
-
 import logging
 import time
 
