@@ -59,6 +59,7 @@ class ConnectionPool(object):
 
     def _selectq(self, qid=-1):
         """选择第几个队列, 默认返回长度最小的队列
+        : 测试发现queue取qsize很耗时,如果queues数量过大,不采用这种方法,可以考虑使用随机选取
         """
         if qid >= 0:
             return self.queues[qid]
