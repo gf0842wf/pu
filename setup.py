@@ -16,6 +16,7 @@ setup(
         'pu',
         'pu.pattern',
         'pu.adt',
+        'pu.mysql',
     ],
     description='Python utils',
     license='MIT',
