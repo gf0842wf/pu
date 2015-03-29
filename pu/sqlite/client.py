@@ -26,18 +26,15 @@ class Row(dict):
 
 
 class Sqlite3Connection(object):
-    def __init__(self, memorize=False, backup=False, **kwargs):
+    def __init__(self, memorize=False, **kwargs):
         """
-        :param memorize: True-把db文件加载到内存(仅限于非:memory:连接)
-        :param backup: 当memorize为True时,backup才有效
+        :param memorize: True-把db文件加载到内存,***而且此时向数据库写并不会同步到文件中***
         :param database(或db): 数据库文件,:memory:表示存储在内存中
         """
         self.database = kwargs.get('database') or kwargs.get('db')
         self.memorize = memorize
-        self.backup = backup
 
         if self.memorize:
-            assert self.database != ':memory:'
             self.load()
         else:
             self.conn = sqlite3.connect(self.database)
@@ -55,11 +52,9 @@ class Sqlite3Connection(object):
 
     def dump(self):
         """把内存db dump到文件
+        : 暂时不再使用
         """
-        if self.backup:
-            shutil.move(self.database, self.database + '.%s.bk' % time.strftime('%Y%m%d%H%M%S'))
-        else:
-            os.unlink(self.database)
+        os.unlink(self.database)
         _conn = sqlite3.connect(self.database)
         str_buffer = StringIO()
         for line in self.conn.iterdump():
@@ -67,20 +62,17 @@ class Sqlite3Connection(object):
         _conn.executescript(str_buffer.getvalue())
         _conn.close()
 
-    def reload(self, is_dump=False):
+    def reload(self):
         """重新加载
         """
-        self.close(is_dump=is_dump)
+        self.close()
         if self.memorize:
-            assert self.database != ':memory:'
             self.load()
         else:
             self.conn = sqlite3.connect(self.database)
 
-    def close(self, is_dump=True):
+    def close(self):
         try:
-            if self.memorize and is_dump:
-                self.dump()
             self.conn.close()
         finally:
             logger.info('connection closed')
@@ -186,7 +178,7 @@ def test_client():
     options = dict(database='x.db')
 
     conn1 = Sqlite3Connection(**options)
-    # conn1.execute('create table book (name varchar(50), author varchar(50))')
+    conn1.execute('create table book (name varchar(50), author varchar(50))')
     print conn1.fetchall('select * from book where author=?', 'yyyy')
     print conn1.get_fields('book')
     conn1.close()
@@ -209,6 +201,13 @@ def test_client():
 
 def test_memorize():
     logging.basicConfig(level=logging.DEBUG, format='[%(asctime)-15s %(levelname)s:%(module)s] %(message)s')
-    c = Sqlite3Connection(database='x.db', memorize=True, backup=True)
-    c.execute('insert into book values("abc", ?)', 'xxxx')
+    c = Sqlite3Connection(database='x.db', memorize=True)
+    c.execute('insert into book values("abc", ?)', 'xxxx')  # 不会同步到磁盘,只在内存中
     print c.fetchall('select * from book')
+
+
+def test_benchmark():
+    c = Sqlite3Connection(database='x.db', memorize=True)
+    t0 = time.time()
+    [c.fetchone('select * from book where author="xxxx"') for _ in xrange(10000)]
+    print 10000 / (time.time() - t0), 'qps'
