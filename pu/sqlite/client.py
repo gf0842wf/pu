@@ -9,7 +9,6 @@ from StringIO import StringIO
 import logging
 import sqlite3
 import os
-import shutil
 import time
 
 logger = logging.getLogger(__name__)
