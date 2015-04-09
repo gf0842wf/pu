@@ -3,13 +3,18 @@
 
 """ description
 mysql db client
-兼容 ultramysql, MySQLdb, pymysql
+ultramysql, MySQLdb, pymysql
 """
 
 import logging
 import time
 
 logger = logging.getLogger(__name__)
+
+try:
+    import tornado.ioloop
+except ImportError:
+    logger.warn('tornado module not found.')
 
 try:
     import MySQLdb
@@ -19,7 +24,8 @@ except ImportError:
 
 
 class MySQLdbConnection(object):
-    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0):
+    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0,
+                 use_tor=False):
         """
         :param reconnect_delay: 重连等待时间, 0-不重连
         """
@@ -35,6 +41,8 @@ class MySQLdbConnection(object):
         if self.autocommit:
             self.conn.autocommit(True)
 
+        self.use_tor = use_tor
+
     def reconnect(self):
         while True:
             try:
@@ -43,14 +51,20 @@ class MySQLdbConnection(object):
                 pass
             try:
                 logger.info('trying reconnect..')
-                self.conn = pymysql.Connection(**self.args)
+                self.conn = MySQLdb.Connection(**self.args)
                 if self.autocommit:
                     self.conn.autocommit(True)
                 logger.info('reconnected.')
                 break
             except:
                 logger.error('reconnect except', exc_info=1)
-            time.sleep(self.reconnect_delay)
+
+            if self.use_tor:
+                ioloop = tornado.ioloop.IOLoop.current()
+                ioloop.add_timeout(time.time() + self.reconnect_delay, self.reconnect)
+                break
+            else:
+                time.sleep(self.reconnect_delay)
 
     def execute(self, query, *args, **kwargs):
         """Executes the given query, returning the lastrowid from the query."""
@@ -231,7 +245,8 @@ except ImportError:
 
 
 class PyMySQLConnection(object):
-    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0):
+    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0,
+                 use_tor=False):
         """
         :param reconnect_delay: 重连等待时间, 0-不重连
         """
@@ -243,6 +258,8 @@ class PyMySQLConnection(object):
             self.args['port'] = port
         self.reconnect_delay = reconnect_delay
         self.conn = pymysql.Connection(**self.args)
+
+        self.use_tor = use_tor
 
     def reconnect(self):
         while True:
@@ -257,7 +274,13 @@ class PyMySQLConnection(object):
                 break
             except:
                 logger.error('reconnect except', exc_info=1)
-            time.sleep(self.reconnect_delay)
+
+            if self.use_tor:
+                ioloop = tornado.ioloop.IOLoop.current()
+                ioloop.add_timeout(time.time() + self.reconnect_delay, self.reconnect)
+                break
+            else:
+                time.sleep(self.reconnect_delay)
 
     def execute(self, query, *args, **kwargs):
         """Executes the given query, returning the lastrowid from the query."""
@@ -407,7 +430,8 @@ except ImportError:
 
 
 class UMySQLConnection(object):
-    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0):
+    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0,
+                 use_tor=False):
         """
         :param reconnect_delay: 重连等待时间, 0-不重连
         """
@@ -415,6 +439,8 @@ class UMySQLConnection(object):
         self.reconnect_delay = reconnect_delay
         self.conn = umysql.Connection()
         self.conn.connect(*self.args)
+
+        self.use_tor = use_tor
 
     def reconnect(self):
         while True:
@@ -427,7 +453,13 @@ class UMySQLConnection(object):
                 break
             except:
                 logger.error('reconnect except', exc_info=1)
-            time.sleep(self.reconnect_delay)
+
+            if self.use_tor:
+                ioloop = tornado.ioloop.IOLoop.current()
+                ioloop.add_timeout(time.time() + self.reconnect_delay, self.reconnect)
+                break
+            else:
+                time.sleep(self.reconnect_delay)
 
     def query(self, sql, *args, **kwargs):
         """

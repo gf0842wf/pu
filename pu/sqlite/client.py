@@ -76,6 +76,9 @@ class Sqlite3Connection(object):
         finally:
             logger.info('connection closed')
 
+    def commit(self):
+        self.conn.commit()
+
     def execute(self, query, *args, **kwargs):
         """
         :return: lastrowid
@@ -146,7 +149,7 @@ class Sqlite3Connection(object):
         logger.debug('sql: %s, args: %s', query, str(args))
         ret = [cursor.execute(query, args), cursor]
         if auto_commit:
-            self.conn.commit()
+            self.commit()
         return ret
 
     def _executemany(self, query, args, kwargs):
@@ -158,7 +161,7 @@ class Sqlite3Connection(object):
         logger.debug('sql: %s, args: %s', query, str(args))
         ret = [cursor.executemany(query, args), cursor]
         if auto_commit:
-            self.conn.commit()
+            self.commit()
         return ret
 
     def get_fields(self, table_name):
@@ -208,5 +211,6 @@ def test_memorize():
 def test_benchmark():
     c = Sqlite3Connection(database='x.db', memorize=True)
     t0 = time.time()
-    [c.fetchone('select * from book where author="xxxx"') for _ in xrange(10000)]
+    [c.fetchone('select * from book where author="zhangsan"') for _ in xrange(10000)]
     print 10000 / (time.time() - t0), 'qps'
+    c.close()
