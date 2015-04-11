@@ -70,6 +70,47 @@ def deep_decode(ob, encoding='utf_8', errors='strict'):
         return ob
 
 
+def xfind_all(s, sep, start=None, end=None):
+    """ 返回所有index
+    >>> list(xfind_all('abcdabcdabcd', 'bc'))
+    [1, 5, 9]
+    >>> 
+    """
+    _start = start
+    while True:
+        index = s.find(sep, _start, end)
+        if index != -1:
+            yield index
+        else:
+            break
+        _start = index + len(sep)
+
+    
+def xsplit(s, sep, maxsplit=None):
+    """ split的generator版本
+    >>> list(xsplit('abcdabcdabcd', 'bc'))
+    ['a', 'da', 'da', 'd']
+    >>>
+    """
+    start = 0
+    cnt = 0
+    while True:
+        pos = s.find(sep, start)
+        if pos == -1:
+            yield s[start:]
+            cnt += 1
+            break
+        else:
+            old_start = start
+            start = pos + len(sep)
+            yield s[old_start:pos]
+            cnt += 1
+        if cnt == maxsplit:
+            break
+    if pos != -1:
+        yield s[pos:]
+        
+        
 if __name__ == '__main__':
     import doctest
 
