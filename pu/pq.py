@@ -68,6 +68,10 @@ def query_list(L, query):
                 if not any(rr):
                     flag = True
                     break
+            elif k == '$lambda':  # 使用lambda时,不能使用其它操作
+                if not v(d):
+                    flag = True
+                    break
             else:
                 if isinstance(v, dict):
                     assert len(v) == 1
@@ -176,9 +180,10 @@ if __name__ == '__main__':
     pq.set_index({'key': 'name'})
     # print pq.find(query={'$or': [{'name': {'$in': ['xx', 'gp']}}, {'age': 25}]}, fields=['name'], limit=2)
     print pq.find(query={'name': 'fk'})
+    print pq.find(query={'$lambda': lambda d: d['name'] == 'fk'})
     l = [{'name': 'gp', 'age': 24}] * 1000000 + [{'name': 'gp', 'age': 23}]
     import time
 
     t0 = time.time()
-    print list(query_list(l, {'age': 23}))
+    print list(query_list(l, {'age': 23, 'name': 'gp'}))
     print time.time() - t0
