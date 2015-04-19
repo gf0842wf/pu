@@ -140,10 +140,9 @@ class PQ(object):
 
         # query
         for i in query:
-            if i in self.indexes:
+            if i in self.indexes and not isinstance(query[i], (list, dict)):
                 L = self.indexes[i][query[i]]
                 break
-
         for _d in query_list(L, query):
             # fields
             d = {}
@@ -175,8 +174,8 @@ if __name__ == '__main__':
 
     pq = PQ(l)
     pq.set_index({'key': 'name'})
-    print pq.find(query={'$or': [{'name': {'$in': ['xx', 'gp']}}, {'age': 25}]}, fields=['name'], limit=2)
-
+    # print pq.find(query={'$or': [{'name': {'$in': ['xx', 'gp']}}, {'age': 25}]}, fields=['name'], limit=2)
+    print pq.find(query={'name': 'fk'})
     l = [{'name': 'gp', 'age': 24}] * 1000000 + [{'name': 'gp', 'age': 23}]
     import time
 
