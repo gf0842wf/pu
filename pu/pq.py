@@ -69,6 +69,7 @@ def query_list(L, query):
                     flag = True
                     break
             elif k == '$lambda':  # 使用lambda时,不能使用其它操作
+                assert len(query) == 1
                 if not v(d):
                     flag = True
                     break
