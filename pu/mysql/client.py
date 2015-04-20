@@ -24,10 +24,10 @@ except ImportError:
 
 
 class MySQLdbConnection(object):
-    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0,
-                 use_tor=False):
+    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', retry_delay=0,
+                 retry_times=0):
         """
-        :param reconnect_delay: 重连等待时间, 0-不重连
+        :param retry_delay: 重连等待时间, 0-不重连
         """
         self.args = dict(passwd=passwd, user=user, charset=charset, db=db)
         if '/' in host:
@@ -35,16 +35,17 @@ class MySQLdbConnection(object):
         else:
             self.args['host'] = host
             self.args['port'] = port
-        self.reconnect_delay = reconnect_delay
+        self.retry_delay = retry_delay
+        self.retry_times = retry_times
         self.conn = MySQLdb.Connection(**self.args)
         self.autocommit = autocommit
         if self.autocommit:
             self.conn.autocommit(True)
 
-        self.use_tor = use_tor
-
     def reconnect(self):
+        i = 0
         while True:
+            i += 1
             try:
                 self.conn.close()
             except:
@@ -58,13 +59,9 @@ class MySQLdbConnection(object):
                 break
             except:
                 logger.error('reconnect except', exc_info=1)
-
-            if self.use_tor:
-                ioloop = tornado.ioloop.IOLoop.current()
-                ioloop.add_timeout(time.time() + self.reconnect_delay, self.reconnect)
-                break
-            else:
-                time.sleep(self.reconnect_delay)
+            if i >= self.retry_times:
+                return
+            time.sleep(self.retry_delay)
 
     def execute(self, query, *args, **kwargs):
         """Executes the given query, returning the lastrowid from the query."""
@@ -144,7 +141,7 @@ class MySQLdbConnection(object):
             return [cursor.execute(query, args or kwargs), cursor]
         except:
             logger.warn('[Error query]: %s args: %s', query, str(args), exc_info=1)
-            if self.reconnect_delay > 0:
+            if self.retry_delay > 0:
                 self.reconnect()
                 cursor.close()
                 try:
@@ -173,7 +170,7 @@ class MySQLdbConnection(object):
             return [cursor.executemany(query, args), cursor]
         except:
             logger.warn('[Error query]: %s args: %s', query, str(args), exc_info=1)
-            if self.reconnect_delay > 0:
+            if self.retry_delay > 0:
                 self.reconnect()
                 cursor.close()
                 try:
@@ -245,10 +242,10 @@ except ImportError:
 
 
 class PyMySQLConnection(object):
-    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0,
-                 use_tor=False):
+    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', retry_delay=0,
+                 retry_times=0):
         """
-        :param reconnect_delay: 重连等待时间, 0-不重连
+        :param retry_delay: 重连等待时间, 0-不重连
         """
         self.args = dict(passwd=passwd, user=user, autocommit=autocommit, charset=charset, database=db)
         if '/' in host:
@@ -256,13 +253,14 @@ class PyMySQLConnection(object):
         else:
             self.args['host'] = host
             self.args['port'] = port
-        self.reconnect_delay = reconnect_delay
+        self.retry_delay = retry_delay
+        self.retry_times = retry_times
         self.conn = pymysql.Connection(**self.args)
 
-        self.use_tor = use_tor
-
     def reconnect(self):
+        i = 0
         while True:
+            i += 1
             try:
                 self.conn.close()
             except:
@@ -274,13 +272,9 @@ class PyMySQLConnection(object):
                 break
             except:
                 logger.error('reconnect except', exc_info=1)
-
-            if self.use_tor:
-                ioloop = tornado.ioloop.IOLoop.current()
-                ioloop.add_timeout(time.time() + self.reconnect_delay, self.reconnect)
-                break
-            else:
-                time.sleep(self.reconnect_delay)
+            if i >= self.retry_times:
+                return
+            time.sleep(self.retry_delay)
 
     def execute(self, query, *args, **kwargs):
         """Executes the given query, returning the lastrowid from the query."""
@@ -360,7 +354,7 @@ class PyMySQLConnection(object):
             return [cursor.execute(query, args or kwargs), cursor]
         except:
             logger.warn('[Error query]: %s args: %s', query, str(args), exc_info=1)
-            if self.reconnect_delay > 0:
+            if self.retry_delay > 0:
                 self.reconnect()
                 cursor.close()
                 try:
@@ -389,7 +383,7 @@ class PyMySQLConnection(object):
             return [cursor.executemany(query, args), cursor]
         except:
             logger.warn('[Error query]: %s args: %s', query, str(args), exc_info=1)
-            if self.reconnect_delay > 0:
+            if self.retry_delay > 0:
                 self.reconnect()
                 cursor.close()
                 try:
@@ -430,20 +424,21 @@ except ImportError:
 
 
 class UMySQLConnection(object):
-    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', reconnect_delay=0,
-                 use_tor=False):
+    def __init__(self, host, user, passwd, db, port=3306, autocommit=True, charset='utf8', retry_delay=0,
+                 retry_times=0):
         """
-        :param reconnect_delay: 重连等待时间, 0-不重连
+        :param retry_delay: 重连等待时间, 0-不重连
         """
         self.args = (host, port, user, passwd, db, autocommit, charset)
-        self.reconnect_delay = reconnect_delay
+        self.retry_delay = retry_delay
+        self.retry_times = retry_times
         self.conn = umysql.Connection()
         self.conn.connect(*self.args)
 
-        self.use_tor = use_tor
-
     def reconnect(self):
+        i = 0
         while True:
+            i += 1
             self.conn.close()
             self.conn = umysql.Connection()
             try:
@@ -453,13 +448,9 @@ class UMySQLConnection(object):
                 break
             except:
                 logger.error('reconnect except', exc_info=1)
-
-            if self.use_tor:
-                ioloop = tornado.ioloop.IOLoop.current()
-                ioloop.add_timeout(time.time() + self.reconnect_delay, self.reconnect)
-                break
-            else:
-                time.sleep(self.reconnect_delay)
+            if i >= self.retry_times:
+                return
+            time.sleep(self.retry_delay)
 
     def query(self, sql, *args, **kwargs):
         """
@@ -470,7 +461,7 @@ class UMySQLConnection(object):
             return self.conn.query(sql, args)
         except:
             logger.warn('[Error query]: %s', sql, exc_info=1)
-            if self.reconnect_delay > 0:
+            if self.retry_delay > 0:
                 self.reconnect()
                 try:
                     return self.conn.query(sql, args)
@@ -530,7 +521,7 @@ class UMySQLConnection(object):
 def test_transaction():
     logging.basicConfig(level=logging.DEBUG, format='[%(asctime)-15s %(levelname)s:%(module)s] %(message)s')
 
-    options = dict(host='localhost', user='root', passwd='112358', db='test', reconnect_delay=5)
+    options = dict(host='localhost', user='root', passwd='112358', db='test', retry_delay=5, retry_times=5)
     # conn = MySQLdbConnection(**options)
     # conn = PyMySQLConnection(**options)
     conn = UMySQLConnection(**options)
@@ -547,7 +538,7 @@ def test_transaction():
 def test_client():
     logging.basicConfig(level=logging.DEBUG, format='[%(asctime)-15s %(levelname)s:%(module)s] %(message)s')
 
-    options = dict(host='localhost', user='root', passwd='112358', db='test', reconnect_delay=5)
+    options = dict(host='localhost', user='root', passwd='112358', db='test', retry_delay=5, retry_times=5)
 
     mysqldb_conn = MySQLdbConnection(**options)
     print mysqldb_conn.fetchall('select * from book where author=%s', u'大大')
