@@ -82,9 +82,9 @@ class MySQLdbConnection(object):
         """Returns a row list for the given query and args."""
         try:
             result, cursor = self._execute(query, args, kwargs)
-            column_names = [d[0] for d in cursor.description]
             if result is False:
                 return False
+            column_names = [d[0] for d in cursor.description]
             return [Row(zip(column_names, row)) for row in cursor]
         finally:
             if locals().get('cursor'):
@@ -295,9 +295,9 @@ class PyMySQLConnection(object):
         """Returns a row list for the given query and args."""
         try:
             result, cursor = self._execute(query, args, kwargs)
-            column_names = [d[0] for d in cursor.description]
             if result is False:
                 return False
+            column_names = [d[0] for d in cursor.description]
             return [Row(zip(column_names, row)) for row in cursor]
         finally:
             if locals().get('cursor'):
